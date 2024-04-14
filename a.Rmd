@@ -1,0 +1,92 @@
+```{R}
+matrix_data <- c(
+  .85, .74, .74, .75, .76, .61, .67, .77, .58, .96, .87,
+  0, .59, .59, .57, .73, .47, .56, .59, .47, .81, .79,
+  0, 0, .48, .39, .80, .78, .46, .52, .31, .62, .84,
+  0, 0, 0, .64, .54, .37, .42, .55, .40, .69, .70,
+  0, 0, 0, 0, .46, .30, .47, .57, .51, .77, .62,
+  0, 0, 0, 0, 0, .64, .40, .52, .36, .65, .86,
+  0, 0, 0, 0, 0, 0, .27, .43, .27, .52, .69,
+  0, 0, 0, 0, 0, 0, 0, .52, .38, .65, .62,
+  0, 0, 0, 0, 0, 0, 0, 0, .35, .76, .70,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, .60, .48,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, .74
+)
+
+# Create the matrix, specifying it has 11 columns (as inferred from your data)
+m <- matrix(matrix_data, nrow = 11, ncol = 11, byrow = TRUE)
+n <- 11
+
+# Create an empty matrix filled with zeros
+m_shifted <- matrix(0, nrow = n, ncol = n)
+
+# Shift the upper triangular part one position to the right, excluding the diagonal
+for (i in 1:(n-1)) {
+  m_shifted[i, (i+1):n] <- m[i, i:(n-1)]
+}
+
+# Set the diagonal elements to 1
+diag(m_shifted) <- 1
+
+# Assign column and row names if needed (same as before)
+colnames(m_shifted) <- c("a", "f", "i", "o", "p", "r", "s", "t", "y", "1", "2-3")
+rownames(m_shifted) <- c("a", "f", "i", "o", "p", "r", "s", "t", "y", "1", "2-3")
+
+
+# remove the last two columns and rows
+m_shifted <- m_shifted[1:10, 1:10]
+
+# make the matrix symmetric by assigning upper triangular part to lower triangular part
+m_shifted[lower.tri(m_shifted)] <- t(m_shifted)[lower.tri(m_shifted)]
+
+# generate 1000 11-d data points whose correlation matrix will be matrix_data
+set.seed(123)
+data <- MASS::mvrnorm(n = 1000, mu = rep(0, 10), Sigma = m_shifted)
+
+
+grades  <- matrix(0, nrow = 10, ncol = 1000)
+
+for(i in 1:10){
+    weights  <- rnorm(n = 10, mean = 7, sd = 2.5)
+    weights[weights < 0] <- 0
+    weights <- weights/sum(weights)
+    grades[i,] <- data %*% weights
+}
+
+# compute rank correlation between all pairs of rows
+# e.g. spearman_m[1,2] is the rank correlation between row 1 and row 2
+spearman_m <- matrix(0, nrow = 10, ncol = 10)
+for(i in 1:10){
+    for(j in 1:10){
+        spearman_m[i,j] <- cor(grades[i,], grades[j,], method = "spearman")
+    }
+}
+
+spearman_m
+
+```
+
+Output:
+
+           [,1]      [,2]      [,3]      [,4]      [,5]      [,6]      [,7]
+ [1,] 1.0000000 0.9963570 0.9952020 0.9792591 0.9828399 0.9941101 0.9957903
+ [2,] 0.9963570 1.0000000 0.9912462 0.9745394 0.9761385 0.9894066 0.9941817
+ [3,] 0.9952020 0.9912462 1.0000000 0.9875319 0.9924264 0.9955938 0.9925174
+ [4,] 0.9792591 0.9745394 0.9875319 1.0000000 0.9968902 0.9927931 0.9788173
+ [5,] 0.9828399 0.9761385 0.9924264 0.9968902 1.0000000 0.9946412 0.9813873
+ [6,] 0.9941101 0.9894066 0.9955938 0.9927931 0.9946412 1.0000000 0.9939759
+ [7,] 0.9957903 0.9941817 0.9925174 0.9788173 0.9813873 0.9939759 1.0000000
+ [8,] 0.9963306 0.9922469 0.9889503 0.9696355 0.9722456 0.9857399 0.9931292
+ [9,] 0.9828275 0.9834433 0.9913794 0.9919621 0.9940069 0.9928008 0.9847410
+[10,] 0.9888884 0.9855575 0.9946421 0.9878178 0.9941506 0.9928508 0.9874341
+           [,8]      [,9]     [,10]
+ [1,] 0.9963306 0.9828275 0.9888884
+ [2,] 0.9922469 0.9834433 0.9855575
+ [3,] 0.9889503 0.9913794 0.9946421
+ [4,] 0.9696355 0.9919621 0.9878178
+ [5,] 0.9722456 0.9940069 0.9941506
+ [6,] 0.9857399 0.9928008 0.9928508
+ [7,] 0.9931292 0.9847410 0.9874341
+ [8,] 1.0000000 0.9716704 0.9815595
+ [9,] 0.9716704 1.0000000 0.9902659
+[10,] 0.9815595 0.9902659 1.0000000
